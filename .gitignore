@@ -41,3 +41,26 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase configuration files
+google-services.json
+GoogleService-Info.plist
+firebase_app_id_file.json
+firebase_options.dart
+
+# Firebase local emulator suite
+**/firebase-debug.log
+**/firebase-debug.*.log
+**/ui-debug.log
+**/pubsub-debug.log
+**/firestore-debug.log
+**/functions-debug.log
+
+# Firebase cache
+.firebase/
+
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties

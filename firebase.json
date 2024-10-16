@@ -1,0 +1,30 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "spitap-dc070",
+          "appId": "1:668370706726:android:5d16c688785b5adfe121e7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "spitap-dc070",
+          "appId": "1:668370706726:ios:b3398af8f6da072ae121e7",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "spitap-dc070",
+          "configurations": {
+            "android": "1:668370706726:android:5d16c688785b5adfe121e7",
+            "ios": "1:668370706726:ios:b3398af8f6da072ae121e7"
+          }
+        }
+      }
+    }
+  }
+}
