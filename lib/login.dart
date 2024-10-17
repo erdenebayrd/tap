@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "home.dart";
+import "package:firebase_auth/firebase_auth.dart";
+// import "home.dart";
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,12 +21,6 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     print("Student Code: $studentCode");
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-          builder: (context) => HomePage(studentCode: studentCode)),
-    );
   }
 
   void _showErrorMessage(String message) {
