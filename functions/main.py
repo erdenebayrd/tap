@@ -1,10 +1,10 @@
-# The Cloud Functions for Firebase SDK to create Cloud Functions and set up triggers.
-from firebase_functions import firestore_fn, https_fn
-
-# The Firebase Admin SDK to access Cloud Firestore.
-from firebase_admin import initialize_app, firestore
-import google.cloud.firestore
 import json
+from random import randint
+import google.cloud.firestore
+from datetime import datetime
+from firebase_functions import https_fn
+from firebase_admin import initialize_app, firestore
+
 
 app = initialize_app()
 
@@ -15,6 +15,30 @@ def alive(req: https_fn.Request) -> https_fn.Response:  # type: ignore
     response_data = {"data": {"message": "I'm alive!"}}
 
     return https_fn.Response(json.dumps(response_data), mimetype="application/json")  # type: ignore
+
+
+@https_fn.on_request()
+def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # type: ignore
+    email = req.args.get("email")
+    if email is None:
+        return https_fn.Response("No email parameter provided", status=400)  # type: ignore
+
+    otp_code = "".join(["{}".format(randint(0, 9)) for _ in range(0, 6)])
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+
+    _, doc_ref = (
+        firestore_client.collection("users")
+        .document(email)
+        .collection("logins")
+        .add({"otp_code": otp_code, "created_at": datetime.now()})
+    )
+
+    print("--------------")
+    print(_)
+    print("_--------------_")
+    print(doc_ref)
+    print("--------------")
+    return doc_ref
 
 
 # @https_fn.on_request()
