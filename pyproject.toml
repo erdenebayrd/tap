@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "functions"
+version = "0.1.0"
+description = ""
+authors = ["erdenebayar <erdenebayr.d@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+firebase-functions = "^0.4.2"
+firebase-admin = "^6.5.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
