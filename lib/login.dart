@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:cloud_functions/cloud_functions.dart";
 // import "package:firebase_auth/firebase_auth.dart";
 // import "home.dart";
 
@@ -12,6 +13,17 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _studentCodeController = TextEditingController();
+  final HttpsCallable callable =
+      FirebaseFunctions.instance.httpsCallable("alive");
+
+  Future<void> _callFunction() async {
+    try {
+      final result = await callable();
+      print("Result $result");
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
   void _login() {
     final studentCode = 'SPI${_studentCodeController.text}';
@@ -21,6 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     print("Student Code: $studentCode");
+    _callFunction();
   }
 
   void _showErrorMessage(String message) {

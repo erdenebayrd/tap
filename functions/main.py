@@ -4,13 +4,17 @@ from firebase_functions import firestore_fn, https_fn
 # The Firebase Admin SDK to access Cloud Firestore.
 from firebase_admin import initialize_app, firestore
 import google.cloud.firestore
+import json
 
 app = initialize_app()
 
 
 @https_fn.on_request()
 def alive(req: https_fn.Request) -> https_fn.Response:  # type: ignore
-    return https_fn.Response("I'm alive!")  # type: ignore
+    print("Req -> ", req)
+    response_data = {"message": "I'm alive!"}
+
+    return https_fn.Response(json.dumps(response_data), mimetype="application/json")  # type: ignore
 
 
 # @https_fn.on_request()
