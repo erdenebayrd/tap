@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:cloud_functions/cloud_functions.dart";
-// import "package:firebase_auth/firebase_auth.dart";
 // import "home.dart";
 
 class LoginPage extends StatefulWidget {
@@ -13,13 +12,14 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _studentCodeController = TextEditingController();
-  final HttpsCallable callable =
-      FirebaseFunctions.instance.httpsCallable("alive");
+  final HttpsCallable callableGetSigninCodeViaEmailCloudFunction =
+      FirebaseFunctions.instance.httpsCallable("get_signin_code_via_email");
 
-  Future<void> _callFunction() async {
+  Future<void> _getSigninCodeViaEmail(String email) async {
     try {
-      final result = await callable();
-      print("Result $result");
+      final result = await callableGetSigninCodeViaEmailCloudFunction
+          .call(<String, dynamic>{"email": email});
+      print(result.data);
     } catch (e) {
       print("Error: $e");
     }
@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     print("Student Code: $studentCode");
-    _callFunction();
+    _getSigninCodeViaEmail(studentCode);
   }
 
   void _showErrorMessage(String message) {

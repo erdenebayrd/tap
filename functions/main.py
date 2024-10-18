@@ -20,9 +20,7 @@ def alive(req: https_fn.Request) -> https_fn.Response:  # type: ignore
 @https_fn.on_request()
 def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # type: ignore
     # Parse the JSON payload of the request
-    request_json = req.get_json(silent=True)
-    email = request_json.get("email") if request_json else None
-    print("Email -> ", email)
+    email = json.loads(req.data).get("data").get("email")
     if email is None:
         response_data = {"error": "No email parameter provided"}
         return https_fn.Response(json.dumps(response_data), status=400, mimetype="application/json")  # type: ignore
@@ -30,19 +28,15 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
     otp_code = "".join(["{}".format(randint(0, 9)) for _ in range(0, 6)])
     firestore_client: google.cloud.firestore.Client = firestore.client()
 
-    _, doc_ref = (
+    added_doc_time, added_doc_ref = (
         firestore_client.collection("users")
         .document(email)
         .collection("logins")
         .add({"otp_code": otp_code, "created_at": datetime.now()})
     )
-
-    print("--------------")
-    print(_)
-    print("_--------------_")
-    print(doc_ref)
-    print("--------------")
+    # spi230957@stud.spi.nsw.edu.au
     # return doc_ref
+    # TODO: send an email to the user with the otp_code
     return https_fn.Response(json.dumps({"data": "Ok!"}), status=200, mimetype="application/json")  # type: ignore
 
 
