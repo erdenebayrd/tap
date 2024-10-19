@@ -68,3 +68,4 @@ fabric.properties
 venv/
 .venv/
 *.lock
+.env*

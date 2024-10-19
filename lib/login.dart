@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     print("Student Code: $studentCode");
-    _getSigninCodeViaEmail(studentCode);
+    _getSigninCodeViaEmail("$studentCode@stud.spi.nsw.edu.au");
   }
 
   void _showErrorMessage(String message) {
