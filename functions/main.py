@@ -62,7 +62,7 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
             firestore_client.collection("users")
             .document(to_email)
             .collection("logins")
-            .add({"otp_code": otp_code, "created_at": datetime.now()})
+            .add({"otp_code": otp_code, "is_logged_in": False, "created_at": datetime.now()})
         )
 
         print("Email sent successfully")
