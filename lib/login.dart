@@ -21,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final result = await callableGetSigninCodeViaEmailCloudFunction
           .call(<String, dynamic>{"email": email});
+      print(result.data);
       return result.data;
     } catch (err) {
       _showErrorMessage("Error: $err");

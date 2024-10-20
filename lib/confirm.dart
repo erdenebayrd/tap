@@ -1,4 +1,4 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -15,8 +15,6 @@ class _ConfirmPageState extends State<ConfirmPage> {
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  final HttpsCallable callableVerifyOtpCloudFunction =
-      FirebaseFunctions.instance.httpsCallable("verify_otp");
   bool _isLoading = false; // Add loading state
 
   @override
@@ -30,6 +28,15 @@ class _ConfirmPageState extends State<ConfirmPage> {
         }
       });
     }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -61,22 +68,24 @@ class _ConfirmPageState extends State<ConfirmPage> {
       });
 
       String otp = _controllers.map((controller) => controller.text).join();
-      // TODO: Implement OTP verification logic
       print('Verifying OTP: $otp');
       print("Email is: ${widget.email}");
-
-      // Simulate a network call for OTP verification
-      // await Future.delayed(const Duration(seconds: 2));
-
-      // Here you would typically call your backend to verify the OTP
-      // For example:
-      // final response = await verifyOtpWithBackend(otp);
-      final response =
-          await callableVerifyOtpCloudFunction.call(<String, dynamic>{
-        "email": widget.email,
-        "otp": otp,
-      });
-      print(response.data);
+      try {
+        final credential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: widget.email, password: otp);
+        print(credential.user);
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'user-not-found') {
+          _showErrorMessage("No user found for that email.");
+          print("No user found for that email.");
+        } else if (e.code == 'wrong-password') {
+          _showErrorMessage("Wrong OTP provided for that user.");
+          print("Wrong password provided for that user.");
+        } else {
+          _showErrorMessage("Error: $e");
+          print("Error: $e");
+        }
+      }
     } catch (err) {
       print("Error: $err");
     } finally {
