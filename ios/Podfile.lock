@@ -70,6 +70,8 @@ PODS:
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - GTMSessionFetcher/Core (3.5.0)
+  - nfc_manager (0.0.1):
+    - Flutter
   - RecaptchaInterop (100.0.0)
 
 DEPENDENCIES:
@@ -77,6 +79,7 @@ DEPENDENCIES:
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
+  - nfc_manager (from `.symlinks/plugins/nfc_manager/ios`)
 
 SPEC REPOS:
   trunk:
@@ -103,6 +106,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_core/ios"
   Flutter:
     :path: Flutter
+  nfc_manager:
+    :path: ".symlinks/plugins/nfc_manager/ios"
 
 SPEC CHECKSUMS:
   cloud_functions: 071fdf2c9ae0932ea9eb8b7d8aef4b014112a8ab
@@ -121,6 +126,7 @@ SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   GoogleUtilities: 26a3abef001b6533cf678d3eb38fd3f614b7872d
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
+  nfc_manager: d7da7cb781f7744b94df5fe9dbca904ac4a0939e
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
 
 PODFILE CHECKSUM: 819463e6a0290f5a72f145ba7cde16e8b6ef0796

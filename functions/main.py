@@ -1,11 +1,10 @@
 import json
-import smtplib
 from random import randint
 import google.cloud.firestore
 from datetime import datetime
-from email.mime.text import MIMEText
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from firebase_functions import https_fn
-from email.mime.multipart import MIMEMultipart
 from firebase_functions.params import StringParam
 from firebase_admin import initialize_app, firestore
 
@@ -21,14 +20,6 @@ def alive(req: https_fn.Request) -> https_fn.Response:  # type: ignore
     return https_fn.Response(json.dumps(response_data), mimetype="application/json")  # type: ignore
 
 
-# # Usage
-# subject = "Test Email"
-# body = "This is a test email sent from Python."
-# to_email = "recipient@example.com"
-
-# send_email(subject, body, to_email)
-
-
 @https_fn.on_request()
 def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # type: ignore
     # Parse the JSON payload of the request
@@ -37,32 +28,45 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
         response_data = {"error": "No to_email parameter provided"}
         return https_fn.Response(json.dumps(response_data), status=400, mimetype="application/json")  # type: ignore
 
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+    logins = (
+        firestore_client.collection("users")
+        .document(to_email)
+        .collection("logins")
+        .where("is_logged_in", "==", False)
+        .get()
+    )
+    print("+" * 100)
+    print(logins)
+    print("+" * 100)
+    # TODO: add check whether try to call this function within 5 mins
+
     otp_code = "".join(["{}".format(randint(0, 9)) for _ in range(0, 6)])
-
-    sender_gmail_address = str(StringParam("EMAIL_ADDRESS"))
-    sender_gmail_password = str(StringParam("EMAIL_PASSWORD"))
-
-    # Create the email
-    msg = MIMEMultipart()
-    msg["From"] = sender_gmail_address
-    msg["To"] = to_email
-    msg["Subject"] = "OTP CODE"
-    msg.attach(MIMEText(f"{otp_code} is your OTP code to login", "plain"))
 
     try:
         # Connect to Gmail's SMTP server
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-        server.login(sender_gmail_address, sender_gmail_password)
-        server.sendmail(sender_gmail_address, to_email, msg.as_string())
-        server.quit()
-        firestore_client: google.cloud.firestore.Client = firestore.client()
-
+        sg = SendGridAPIClient(str(StringParam("SENDGRID_API_KEY", "").value))
+        response = sg.send(
+            Mail(
+                # from_email="ericd@engineer.com",
+                from_email="spi230957@stud.spi.nsw.edu.au",
+                to_emails=to_email,
+                subject="Hi, OTP code",
+                html_content=f"<strong>use this {otp_code} to login</strong>",
+            )
+        )
         added_doc_time, added_doc_ref = (
             firestore_client.collection("users")
             .document(to_email)
             .collection("logins")
-            .add({"otp_code": otp_code, "is_logged_in": False, "created_at": datetime.now()})
+            .add(
+                {
+                    "otp_code": otp_code,
+                    "is_logged_in": False,
+                    "created_at": datetime.now(),
+                    "updated_at": datetime.now(),
+                }
+            )
         )
 
         print("Email sent successfully")
