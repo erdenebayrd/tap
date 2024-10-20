@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:cloud_functions/cloud_functions.dart";
+import "confirm.dart";
 // import "home.dart";
 
 class LoginPage extends StatefulWidget {
@@ -14,26 +15,47 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _studentCodeController = TextEditingController();
   final HttpsCallable callableGetSigninCodeViaEmailCloudFunction =
       FirebaseFunctions.instance.httpsCallable("get_signin_code_via_email");
+  bool _isLoading = false;
 
-  Future<void> _getSigninCodeViaEmail(String email) async {
+  Future<dynamic> _getSigninCodeViaEmail(String email) async {
     try {
       final result = await callableGetSigninCodeViaEmailCloudFunction
           .call(<String, dynamic>{"email": email});
-      print(result.data);
-    } catch (e) {
-      print("Error: $e");
+      return result.data;
+    } catch (err) {
+      _showErrorMessage("Error: $err");
     }
   }
 
-  void _login() {
-    final studentCode = 'SPI${_studentCodeController.text}';
-    if (studentCode.length != 9) {
-      _showErrorMessage("Please enter a valid student code");
-      return;
+  void _login() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      final studentCode = 'SPI${_studentCodeController.text}';
+      if (studentCode.length != 9) {
+        _showErrorMessage("Please enter a valid student code");
+        return;
+      }
+      final studentEmail = "$studentCode@stud.spi.nsw.edu.au";
+      await _getSigninCodeViaEmail(studentEmail);
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConfirmPage(
+              email: studentEmail,
+            ),
+          ),
+        );
+      }
+    } catch (err) {
+      _showErrorMessage("Error: $err");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    print("Student Code: $studentCode");
-    _getSigninCodeViaEmail("$studentCode@stud.spi.nsw.edu.au");
   }
 
   void _showErrorMessage(String message) {
@@ -62,9 +84,11 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                // disable and opacity 80% and disappear cursor below text field when isLoading is true
                 TextField(
                   controller: _studentCodeController,
                   decoration: const InputDecoration(
+                    // border: OutlineInputBorder(),
                     labelText: "Student code",
                     prefix: Text("SPI"),
                   ),
@@ -75,10 +99,19 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
                 const SizedBox(height: 20.0),
-                ElevatedButton(
-                  onPressed: _login,
-                  child: const Text("Login"),
-                ),
+                // replace below button to show loading icon when isLoading is true
+                if (_isLoading)
+                  const CircularProgressIndicator()
+                else
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : const Text("Login"),
+                  ),
               ])),
     );
   }

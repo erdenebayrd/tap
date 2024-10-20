@@ -1,15 +1,17 @@
 import json
 from random import randint
 import google.cloud.firestore
-from datetime import datetime
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from firebase_functions import https_fn
+from datetime import datetime, timedelta
 from firebase_functions.params import StringParam
 from firebase_admin import initialize_app, firestore
 
 
 app = initialize_app()
+dt_format = "%Y-%m-%d %H:%M:%S"
+sendgrid_apikey = str(StringParam("SENDGRID_API_KEY", "").value)
 
 
 @https_fn.on_request()
@@ -33,19 +35,21 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
         firestore_client.collection("users")
         .document(to_email)
         .collection("logins")
-        .where("is_logged_in", "==", False)
-        .get()
+        .order_by("created_at", direction=firestore.Query.DESCENDING)  # type: ignore
+        .stream()
     )
-    print("+" * 100)
-    print(logins)
-    print("+" * 100)
-    # TODO: add check whether try to call this function within 5 mins
+
+    for item in logins:
+        item = item.to_dict()
+        print(item)
+        if datetime.now() - datetime.strptime(item.get("created_at"), dt_format) < timedelta(minutes=30):
+            return https_fn.Response(json.dumps({"data": item}), status=200, mimetype="application/json")  # type: ignore
 
     otp_code = "".join(["{}".format(randint(0, 9)) for _ in range(0, 6)])
 
     try:
         # Connect to Gmail's SMTP server
-        sg = SendGridAPIClient(str(StringParam("SENDGRID_API_KEY", "").value))
+        sg = SendGridAPIClient(sendgrid_apikey)
         response = sg.send(
             Mail(
                 # from_email="ericd@engineer.com",
@@ -63,33 +67,62 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
                 {
                     "otp_code": otp_code,
                     "is_logged_in": False,
-                    "created_at": datetime.now(),
-                    "updated_at": datetime.now(),
+                    "created_at": datetime.now().strftime(dt_format),
+                    "updated_at": datetime.now().strftime(dt_format),
                 }
             )
         )
-
         print("Email sent successfully")
-        return https_fn.Response(json.dumps({"data": "Email sent successfully!"}), status=200, mimetype="application/json")  # type: ignore
+        return https_fn.Response(json.dumps({"data": added_doc_ref.get().to_dict()}), status=200, mimetype="application/json")  # type: ignore
     except Exception as e:
         print(f"Failed to send email: {e}")
 
     return https_fn.Response(json.dumps({"data": "Failed to send email"}), status=500, mimetype="application/json")  # type: ignore
 
 
-# @https_fn.on_request()
-# def addmessage(req: https_fn.Request) -> https_fn.Response:  # type: ignore
-#     """Take the text parameter passed to this HTTP endpoint and insert it into
-#     a new document in the messages collection."""
-#     # Grab the text parameter.
-#     original = req.args.get("text")
-#     if original is None:
-#         return https_fn.Response("No text parameter provided", status=400)  # type: ignore
+@https_fn.on_request()
+def verify_otp(req: https_fn.Request) -> https_fn.Response:
+    data = json.loads(req.data).get("data")
+    print("-" * 100)
+    print(data)
+    print("-" * 100)
+    email = data.get("email")
+    otp = data.get("otp")
 
-#     firestore_client: google.cloud.firestore.Client = firestore.client()
+    if not email or not otp:
+        response_data = {"data": "Email and OTP are required"}
+        return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")
 
-#     # Push the new message into Cloud Firestore using the Firebase Admin SDK.
-#     _, doc_ref = firestore_client.collection("messages").add({"original": original})
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+    user_ref = firestore_client.collection("users").document(email)
 
-#     # Send back a message that we've successfully written the message
-#     return https_fn.Response(f"Message with ID {doc_ref.id} added.")  # type: ignore
+    # Query the latest login attempt
+    latest_login = (
+        user_ref.collection("logins").order_by("created_at", direction=firestore.Query.DESCENDING).limit(1).get()
+    )
+
+    if not latest_login:
+        return https_fn.Response(
+            json.dumps({"data": "No recent login attempt found"}), status=200, mimetype="application/json"
+        )
+
+    latest_login = latest_login[0]
+    latest_login_doc_id = latest_login.id
+    latest_login = latest_login.to_dict()
+
+    print("-" * 100)
+    print(latest_login)
+    print("-" * 100)
+
+    if latest_login["otp_code"] == otp:
+        # OTP is correct, update the login status
+        session_id = int(datetime.now().timestamp() * 1000)  # Current epoch time in milliseconds
+        user_ref.collection("logins").document(latest_login_doc_id).set(
+            {"is_logged_in": True, "updated_at": datetime.now().strftime(dt_format), "session_id": session_id},
+            merge=True,
+        )
+        return https_fn.Response(
+            json.dumps({"data": {**latest_login, "session_id": session_id}}), status=200, mimetype="application/json"
+        )
+    else:
+        return https_fn.Response(json.dumps({"data": "Invalid OTP"}), status=200, mimetype="application/json")
