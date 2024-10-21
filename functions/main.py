@@ -36,7 +36,7 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
             now = datetime.now(timezone.utc)
             last_sign_in_time = datetime.fromtimestamp(last_sign_in_timestamp / 1000, tz=timezone.utc)
             time_diff = now - last_sign_in_time
-            if time_diff.total_seconds() < 12 * 60 * 60:  # 12 hours
+            if time_diff.total_seconds() < 0.1 * 60 * 60:  # 12 hours TODO: change 0.1 to 12
                 response_data = {"data": "You only can login once every 12 hours"}
                 return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")
     except auth.UserNotFoundError:
