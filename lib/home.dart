@@ -199,12 +199,12 @@ class _HomePageState extends State<HomePage> {
         );
         print("Tag data added to Firestore successfully");
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('NFC tag data saved successfully')),
+          const SnackBar(content: Text('tag data saved successfully')),
         );
       } catch (e) {
         print("Error adding tag data to Firestore: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving NFC tag data: $e')),
+          SnackBar(content: Text('Error saving tag data: $e')),
         );
       }
     }
