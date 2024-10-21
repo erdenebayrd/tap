@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'dart:io' show Platform;
 import 'login.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   final String studentEmail;
@@ -215,28 +216,62 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Welcome, ${widget.studentEmail}"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _signOut(context),
-            tooltip: 'Sign out',
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverAppBar(
+            expandedHeight: 200.0,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text("Welcome, ${widget.studentEmail.split('@')[0]}"),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Colors.blue, Colors.indigo],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _signOut(context),
+                tooltip: 'Sign out',
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: _tapHistory.length,
-              itemBuilder: (context, index) {
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Recent NFC Taps',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
                 final tap = _tapHistory[index];
-                return ListTile(
-                  title: Text('Tag ID: ${tap['tagId']}'),
-                  subtitle: Text('Tapped on: ${tap['timestamp'].toString()}'),
+                return Card(
+                  elevation: 2,
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      child: Icon(Icons.nfc, color: Colors.white),
+                    ),
+                    title: Text('Tag ID: ${tap['tagId']}'),
+                    subtitle: Text(
+                        'Tapped on: ${DateFormat('MMM d, y HH:mm').format(tap['timestamp'])}'),
+                    trailing: Icon(Icons.chevron_right),
+                  ),
                 );
               },
+              childCount: _tapHistory.length,
             ),
           ),
         ],
@@ -245,6 +280,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: () => _readNfc(context),
         label: const Text('TAP'),
         icon: const Icon(Icons.nfc),
+        backgroundColor: Colors.indigo,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
