@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'login.dart';
 
 class HomePage extends StatelessWidget {
   final String studentEmail;
@@ -32,12 +33,29 @@ class HomePage extends StatelessWidget {
     if (confirm) {
       try {
         // Update lastSignInTime before signing out
+        User? user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          String currentTime = DateTime.now().toUtc().toIso8601String();
+          await user.updateDisplayName(currentTime);
+          print("Last sign-in time updated successfully");
+        }
 
         // Sign out the user
         await FirebaseAuth.instance.signOut();
-        // Navigation is handled by the StreamBuilder in main.dart,
-        // so we don't need to navigate manually here.
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PopScope(
+                canPop: false,
+                child: LoginPage(),
+              ),
+            ),
+          );
+        }
+        print("Signed out successfully");
       } catch (e) {
+        print("Error updating last sign-in time: $e");
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error signing out: $e')),

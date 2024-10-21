@@ -3,22 +3,14 @@ from random import randint
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from firebase_functions import https_fn
-from datetime import datetime, timezone
 from firebase_admin import initialize_app, auth
 from firebase_functions.params import StringParam
+from datetime import datetime, timezone, timedelta
 
 
 app = initialize_app()
-dt_format = "%Y-%m-%d %H:%M:%S"
+dt_format = "%Y-%m-%dT%H:%M:%S.%fZ"
 sendgrid_apikey = str(StringParam("SENDGRID_API_KEY", "").value)
-
-
-@https_fn.on_request()
-def alive(req: https_fn.Request) -> https_fn.Response:  # type: ignore
-    print("Req -> ", req)
-    response_data = {"data": {"message": "I'm alive!"}}
-
-    return https_fn.Response(json.dumps(response_data), mimetype="application/json")  # type: ignore
 
 
 @https_fn.on_request()
@@ -31,14 +23,15 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
 
     try:
         user = auth.get_user_by_email(to_email)
-        last_sign_in_timestamp = user.user_metadata.last_sign_in_timestamp  # Milliseconds since epoch
-        if last_sign_in_timestamp is not None:
-            now = datetime.now(timezone.utc)
-            last_sign_in_time = datetime.fromtimestamp(last_sign_in_timestamp / 1000, tz=timezone.utc)
-            time_diff = now - last_sign_in_time
-            if time_diff.total_seconds() < 0.1 * 60 * 60:  # 12 hours TODO: change 0.1 to 12
-                response_data = {"data": "You only can login once every 12 hours"}
-                return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")
+        last_sign_in_time = user.display_name
+
+        if last_sign_in_time is None or last_sign_in_time == "":
+            last_sign_in_time = "1970-01-01T00:00:00.000Z"
+
+        last_sign_in_time = datetime.strptime(last_sign_in_time, dt_format).replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - last_sign_in_time < timedelta(hours=12):
+            response_data = {"data": "You only can login once every 12 hours"}
+            return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")
     except auth.UserNotFoundError:
         pass  # User does not exist, proceed
 
@@ -60,7 +53,6 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
                 email=to_email,
                 email_verified=False,
                 password=otp_code,
-                display_name=to_email,
                 disabled=False,
             )
         except auth.EmailAlreadyExistsError:

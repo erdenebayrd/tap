@@ -78,10 +78,13 @@ class _ConfirmPageState extends State<ConfirmPage> {
         print(credential.user);
         if (credential.user != null) {
           if (mounted) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => HomePage(studentEmail: widget.email),
+                builder: (context) => PopScope(
+                  canPop: false,
+                  child: HomePage(studentEmail: widget.email),
+                ),
               ),
             );
           }
