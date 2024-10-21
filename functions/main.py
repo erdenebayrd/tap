@@ -3,6 +3,7 @@ from random import randint
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from firebase_functions import https_fn
+from datetime import datetime, timezone
 from firebase_admin import initialize_app, auth
 from firebase_functions.params import StringParam
 
@@ -25,8 +26,21 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
     # Parse the JSON payload of the request
     to_email = json.loads(req.data).get("data").get("email")
     if to_email is None:
-        response_data = {"error": "No to_email parameter provided"}
-        return https_fn.Response(json.dumps(response_data), status=400, mimetype="application/json")  # type: ignore
+        response_data = {"data": "No to_email parameter provided"}
+        return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")  # type: ignore
+
+    try:
+        user = auth.get_user_by_email(to_email)
+        last_sign_in_timestamp = user.user_metadata.last_sign_in_timestamp  # Milliseconds since epoch
+        if last_sign_in_timestamp is not None:
+            now = datetime.now(timezone.utc)
+            last_sign_in_time = datetime.fromtimestamp(last_sign_in_timestamp / 1000, tz=timezone.utc)
+            time_diff = now - last_sign_in_time
+            if time_diff.total_seconds() < 12 * 60 * 60:  # 12 hours
+                response_data = {"data": "You only can login once every 12 hours"}
+                return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")
+    except auth.UserNotFoundError:
+        pass  # User does not exist, proceed
 
     otp_code = "".join(["{}".format(randint(0, 9)) for _ in range(0, 6)])
     try:
@@ -53,7 +67,7 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
             user = auth.get_user_by_email(to_email)
             auth.update_user(user.uid, password=otp_code)
         print("Email sent successfully")
-        return https_fn.Response(json.dumps({"data": user.uid}), status=200, mimetype="application/json")  # type: ignore
+        return https_fn.Response(json.dumps({"data": "ok"}), status=200, mimetype="application/json")  # type: ignore
     except Exception as e:
         print(f"Failed to send email: {e}")
 

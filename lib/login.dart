@@ -21,10 +21,12 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final result = await callableGetSigninCodeViaEmailCloudFunction
           .call(<String, dynamic>{"email": email});
+      _showErrorMessage(result.data);
       print(result.data);
       return result.data;
     } catch (err) {
-      _showErrorMessage("Error: $err");
+      print(err);
+      // _showErrorMessage("Error: $err");
     }
   }
 
@@ -39,8 +41,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
       final studentEmail = "$studentCode@stud.spi.nsw.edu.au";
-      await _getSigninCodeViaEmail(studentEmail);
-      if (mounted) {
+      final result = await _getSigninCodeViaEmail(studentEmail);
+      if (result == "ok" && mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(

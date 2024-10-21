@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import "home.dart";
 
 class ConfirmPage extends StatefulWidget {
   final String email;
@@ -16,6 +17,7 @@ class _ConfirmPageState extends State<ConfirmPage> {
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false; // Add loading state
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -71,9 +73,19 @@ class _ConfirmPageState extends State<ConfirmPage> {
       print('Verifying OTP: $otp');
       print("Email is: ${widget.email}");
       try {
-        final credential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(email: widget.email, password: otp);
+        final credential = await _auth.signInWithEmailAndPassword(
+            email: widget.email, password: otp);
         print(credential.user);
+        if (credential.user != null) {
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage(studentEmail: widget.email),
+              ),
+            );
+          }
+        }
       } on FirebaseAuthException catch (e) {
         if (e.code == 'user-not-found') {
           _showErrorMessage("No user found for that email.");
@@ -93,13 +105,6 @@ class _ConfirmPageState extends State<ConfirmPage> {
         _isLoading = false; // Set loading state to false after verification
       });
     }
-
-    // Handle the response accordingly
-    // if (response.success) {
-    //   // Navigate to the next page
-    // } else {
-    //   // Show error message
-    // }
   }
 
   @override
