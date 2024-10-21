@@ -246,7 +246,7 @@ class _HomePageState extends State<HomePage> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Recent NFC Taps',
+                'Recent Taps up to 10',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
@@ -264,10 +264,11 @@ class _HomePageState extends State<HomePage> {
                       backgroundColor: Colors.blue,
                       child: Icon(Icons.nfc, color: Colors.white),
                     ),
-                    title: Text('Tag ID: ${tap['tagId']}'),
+                    // title: Text('Tag ID: ${tap['tagId']}'),
                     subtitle: Text(
-                        'Tapped on: ${DateFormat('MMM d, y HH:mm').format(tap['timestamp'])}'),
-                    trailing: Icon(Icons.chevron_right),
+                      'Tapped on: ${DateFormat('MMM d, y HH:mm:ss').format(tap['timestamp'])}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
                   ),
                 );
               },
@@ -278,8 +279,15 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _readNfc(context),
-        label: const Text('TAP'),
-        icon: const Icon(Icons.nfc),
+        label: const Text(
+          'TAP',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        icon: const Icon(Icons.nfc, size: 24, color: Colors.white),
         backgroundColor: Colors.indigo,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
