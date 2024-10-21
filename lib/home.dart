@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'dart:io' show Platform;
 import 'login.dart';
-import 'nfc_success_animation.dart';
 
 class HomePage extends StatefulWidget {
   final String studentEmail;
@@ -14,7 +14,35 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _showSuccessAnimation = false;
+  List<Map<String, dynamic>> _tapHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTapHistory();
+  }
+
+  Future<void> _loadTapHistory() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.email)
+          .collection('taps')
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .get();
+
+      setState(() {
+        _tapHistory = querySnapshot.docs
+            .map((doc) => {
+                  'tagId': doc['tagId'],
+                  'timestamp': (doc['timestamp'] as Timestamp).toDate(),
+                })
+            .toList();
+      });
+    }
+  }
 
   Future<void> _signOut(BuildContext context) async {
     final bool confirm = await showDialog(
@@ -152,6 +180,36 @@ class _HomePageState extends State<HomePage> {
     }
 
     print("Unique ID: $uniqueId");
+
+    // Get the current user
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null && uniqueId.isNotEmpty) {
+      // Add the tap data to Firestore
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.email)
+            .collection('taps')
+            .add(
+          {
+            'tagId': uniqueId,
+            'timestamp': FieldValue.serverTimestamp(),
+          },
+        );
+        print("Tag data added to Firestore successfully");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('NFC tag data saved successfully')),
+        );
+      } catch (e) {
+        print("Error adding tag data to Firestore: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving NFC tag data: $e')),
+        );
+      }
+    }
+
+    // After successfully adding the tag data to Firestore
+    await _loadTapHistory(); // Reload the tap history
   }
 
   @override
@@ -167,27 +225,28 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Welcome to the Home Page, ${widget.studentEmail}",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => _readNfc(context),
-                  child: const Text('TAP'),
-                ),
-              ],
+          Expanded(
+            child: ListView.builder(
+              itemCount: _tapHistory.length,
+              itemBuilder: (context, index) {
+                final tap = _tapHistory[index];
+                return ListTile(
+                  title: Text('Tag ID: ${tap['tagId']}'),
+                  subtitle: Text('Tapped on: ${tap['timestamp'].toString()}'),
+                );
+              },
             ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _readNfc(context),
+        label: const Text('TAP'),
+        icon: const Icon(Icons.nfc),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
