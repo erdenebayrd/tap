@@ -264,11 +264,11 @@ class _HomePageState extends State<HomePage> {
                       backgroundColor: Colors.blue,
                       child: Icon(Icons.nfc, color: Colors.white),
                     ),
-                    // title: Text('Tag ID: ${tap['tagId']}'),
+                    title: Text('Tag ID: ${tap['tagId']}'),
                     subtitle: Text(
                       'Tapped on: ${DateFormat('MMM d, y HH:mm:ss').format(tap['timestamp'])}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    // trailing: const Icon(Icons.chevron_right),
                   ),
                 );
               },
