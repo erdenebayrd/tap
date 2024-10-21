@@ -225,7 +225,7 @@ class _HomePageState extends State<HomePage> {
             flexibleSpace: FlexibleSpaceBar(
               title: Text("Welcome, ${widget.studentEmail.split('@')[0]}"),
               background: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
@@ -260,7 +260,7 @@ class _HomePageState extends State<HomePage> {
                   margin:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
-                    leading: CircleAvatar(
+                    leading: const CircleAvatar(
                       backgroundColor: Colors.blue,
                       child: Icon(Icons.nfc, color: Colors.white),
                     ),
