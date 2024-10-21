@@ -3,6 +3,7 @@ import "package:flutter/services.dart";
 import "package:cloud_functions/cloud_functions.dart";
 import "confirm.dart";
 // import "home.dart";
+import "package:firebase_auth/firebase_auth.dart";
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,6 +17,8 @@ class _LoginPageState extends State<LoginPage> {
   final HttpsCallable callableGetSigninCodeViaEmailCloudFunction =
       FirebaseFunctions.instance.httpsCallable("get_signin_code_via_email");
   bool _isLoading = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
 
   Future<dynamic> _getSigninCodeViaEmail(String email) async {
     try {
@@ -30,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _login() async {
+  Future<void> _signIn() async {
     try {
       setState(() {
         _isLoading = true;
@@ -43,6 +46,32 @@ class _LoginPageState extends State<LoginPage> {
       final studentEmail = "$studentCode@stud.spi.nsw.edu.au";
       final result = await _getSigninCodeViaEmail(studentEmail);
       if (result == "ok" && mounted) {
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text,
+          password: _otpController.text,
+        );
+
+        User? user = userCredential.user;
+        if (user != null && user.displayName != null) {
+          List<String> parts = user.displayName!.split('|');
+          if (parts.length == 2) {
+            DateTime lastSignInTime = DateTime.parse(parts[1]);
+            DateTime now = DateTime.now().toUtc();
+            Duration difference = now.difference(lastSignInTime);
+
+            if (difference.inHours < 12) {
+              // Show error message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('You can only login once every 12 hours.')),
+              );
+              await FirebaseAuth.instance.signOut();
+              return;
+            }
+          }
+        }
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -73,6 +102,8 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _studentCodeController.dispose();
+    _emailController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -107,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                   const CircularProgressIndicator()
                 else
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _isLoading ? null : _signIn,
                     child: _isLoading
                         ? const CircularProgressIndicator(
                             valueColor:

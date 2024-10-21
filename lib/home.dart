@@ -97,16 +97,16 @@ class _HomePageState extends State<HomePage> {
       await NfcManager.instance.startSession(
         onDiscovered: (NfcTag tag) async {
           await _processTag(tag, context);
-          NfcManager.instance.stopSession(
-            alertMessage: 'NFC tag read successfully!',
-            errorMessage: 'Failed to read NFC tag.',
-          );
+          await NfcManager.instance.stopSession();
         },
         pollingOptions: {NfcPollingOption.iso14443, NfcPollingOption.iso15693},
-        alertMessage: 'Hold your iPhone near an NFC tag',
+        alertMessage: 'Hold your iPhone near a tag',
       );
     } catch (e) {
       print('Error starting NFC session: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error reading NFC: $e')),
+      );
     }
   }
 
@@ -123,7 +123,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               Icon(Icons.nfc, size: 50),
               SizedBox(height: 16),
-              Text('Hold your device near an NFC tag'),
+              Text('Hold your device near a tag'),
             ],
           ),
           actions: <Widget>[
@@ -141,41 +141,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _processTag(NfcTag tag, BuildContext context) async {
-    String tagInfo = '';
     print(tag.data);
-    if (tag.data['ndef'] != null) {
-      var ndefMessage = tag.data['ndef']['cachedMessage'];
-      if (ndefMessage != null) {
-        for (var record in ndefMessage['records']) {
-          tagInfo += 'Type: ${record['type']}\n';
-          tagInfo += 'Payload: ${String.fromCharCodes(record['payload'])}\n\n';
-        }
-      }
-    } else {
-      tagInfo =
-          'Tag ID: ${tag.data['nfca']['identifier'].map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}';
+
+    String uniqueId = '';
+    if (tag.data['mifare'] != null &&
+        tag.data['mifare']['identifier'] != null) {
+      List<int> identifier = tag.data['mifare']['identifier'];
+      uniqueId =
+          identifier.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
     }
-    print("tagInfo $tagInfo");
 
-    // // Show success animation
-    // setState(() {
-    //   _showSuccessAnimation = true;
-    // });
-
-    // // Wait for the animation to complete
-    // await Future.delayed(const Duration(milliseconds: 1500));
-
-    // setState(() {
-    //   _showSuccessAnimation = false;
-    // });
-
-    // // Show tag info after a short delay
-    // await Future.delayed(const Duration(milliseconds: 500));
-    // if (mounted) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('NFC Tag Info:\n$tagInfo')),
-    //   );
-    // }
+    print("Unique ID: $uniqueId");
   }
 
   @override
@@ -210,14 +186,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          if (_showSuccessAnimation)
-            NfcSuccessAnimation(
-              onAnimationComplete: () {
-                setState(() {
-                  _showSuccessAnimation = false;
-                });
-              },
-            ),
         ],
       ),
     );
