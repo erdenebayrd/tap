@@ -182,7 +182,7 @@ class _ConfirmPageState extends State<ConfirmPage> {
                           ),
                           child: const Text(
                             'Verify OTP',
-                            style: TextStyle(fontSize: 18),
+                            style: TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
                 ],
