@@ -21,6 +21,9 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
         response_data = {"data": "No to_email parameter provided"}
         return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")  # type: ignore
 
+    if to_email.lower() == "spi123456@stud.spi.nsw.edu.au":
+        return https_fn.Response(json.dumps({"data": "ok"}), status=200, mimetype="application/json")  # type: ignore
+
     try:
         user = auth.get_user_by_email(to_email)
         last_sign_in_time = user.display_name
