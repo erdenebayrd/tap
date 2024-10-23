@@ -93,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: const InputDecoration(
                     // border: OutlineInputBorder(),
                     labelText: "Student code",
-                    prefix: Text("SPI"),
+                    prefix: Text("spi"),
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
