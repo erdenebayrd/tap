@@ -32,8 +32,8 @@ def get_signin_code_via_email(req: https_fn.Request) -> https_fn.Response:  # ty
             last_sign_in_time = "1970-01-01T00:00:00.000Z"
 
         last_sign_in_time = datetime.strptime(last_sign_in_time, dt_format).replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) - last_sign_in_time < timedelta(hours=12):
-            response_data = {"data": "You only can login once every 12 hours"}
+        if datetime.now(timezone.utc) - last_sign_in_time < timedelta(hours=2):
+            response_data = {"data": "You only can login once every 2 hours"}
             return https_fn.Response(json.dumps(response_data), status=200, mimetype="application/json")
     except auth.UserNotFoundError:
         pass  # User does not exist, proceed
